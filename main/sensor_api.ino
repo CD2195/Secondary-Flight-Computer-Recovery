@@ -15,8 +15,7 @@ Adafruit_BMP085_Unified       bmp   = Adafruit_BMP085_Unified(18001);
 //float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;
 float seaLevelPressure = 999.25;
 
-void initSensors()
-{
+void initSensors() {
   if(!accel.begin())
   {
     /* There was a problem detecting the LSM303 ... check your connections */
@@ -37,8 +36,7 @@ void initSensors()
   }
 }
 
-boolean accelerometer_sensor(float &pitch, float &roll, float &heading) 
-{
+boolean accelerometer_sensor(float &pitch, float &roll, float &heading) {
   sensors_event_t accel_event;
   sensors_vec_t   orientation;
  
@@ -62,8 +60,7 @@ boolean accelerometer_sensor(float &pitch, float &roll, float &heading)
   return false;
 }
 
-boolean altitude_temperature_sensor(float &altitude, float &temperature) 
-{
+boolean altitude_temperature_sensor(float &altitude, float &temperature) {
   sensors_event_t bmp_event;
 
   /* Calculate the altitude using the barometric pressure sensor */
@@ -96,5 +93,8 @@ float get_alt() {
                                       bmp_event.pressure,
                                       temperature); 
     return altitude;
+  }
+  else { 
+    return 0;
   }
 }

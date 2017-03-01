@@ -30,12 +30,12 @@ String logFileName;
 
 // Function to initialise card. Must be called in setup()
 void initCard() {
-  Serial.print ("Initialising SD Card... ");
+  Serial.print (F("Initialising SD Card... "));
   if (!SD.begin(cs)) {
-    Serial.println("Initialisation failed!");
+    Serial.println(F("Initialisation failed!"));
     return;
   }
-  Serial.println("Initialisation done.");
+  Serial.println(F("Initialisation done."));
 
   /*// test file write
   File test = SD.open("test.log", FILE_WRITE);
@@ -72,19 +72,20 @@ void initCard() {
     }
     index.close();
   }
-  logFileName = "f" + String(count) + ".log";
+  logFileName = "f" + String(count) + ".csv";
   Serial.println("\nLatest logfile: " + logFileName);
 }
-
+  
 // Writes strings to latest log file (f#.log). Parameter is a string.
 // Format of log (in CSV): milliseconds,(Data here seperated by commas)
 void writeLog(String text) {
   File LOG = SD.open(logFileName, FILE_WRITE);
   if (LOG) {
-    LOG.println(String(millis()) + "," + text);
+    Serial.println(text);
+    LOG.println(text);
     LOG.close();
   } else {
-    Serial.println("ERROR: Writing to log failed!");
+    Serial.println(F("ERROR: Writing to log failed!"));
   }
 }
 
