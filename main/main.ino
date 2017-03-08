@@ -5,7 +5,6 @@
 */
 
 #include <ResponsiveAnalogRead.h> // Import noise reduction library
-#include <avr/pgmspace.h> // Library for handling flash memory
 
 // Declare variables
 float currentAGL; //current above ground level altitude
