@@ -31,7 +31,7 @@ String logFileName;
 // Function to initialise card. Must be called in setup()
 void initCard() {
   Serial.print (F("Initialising SD Card... "));
-  if (!SD.begin(8)) {
+  if (!SD.begin(cs)) {
     Serial.println(F("Initialisation failed!"));
     return;
   }

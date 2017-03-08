@@ -157,7 +157,7 @@ float getVelocity(float v0, byte direction) {
 void updateAccel() {
   if(accelerometer_sensor(pitch,roll,heading,ax,ay,az));
   else Serial.println("Accelerometer update failed!");
-}F("time,totalAccel,currentAGL,lastAGL,temperature,launchAlt,isLaunched,apogeeDetected")
+}
 
 // get the current total acceleration
 float getTotalAccel() {
