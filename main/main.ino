@@ -7,12 +7,12 @@
 #include <ResponsiveAnalogRead.h> // Import noise reduction library
 
 // Declare variables
-float currentAGL; //current above ground level altitude
-float lastAGL = 0; //last altitude reading (above ground level)
-float maxAGL = -30000; // maximum altitude reading (above ground level)
-float calculatedMaxAGL;
-float temperature;
+int currentAGL; //current above ground level altitude
+int lastAGL = 0; //last altitude reading (above ground level)
+int maxAGL = -30000; // maximum altitude reading (above ground level)
+int calculatedMaxAGL;
 float launchAlt = 0; //altitude at launch
+float temperature;
 boolean isLaunched = false;
 boolean apogeeDetected = false;
 unsigned long currentTime; //current time since Arduino started
@@ -70,8 +70,8 @@ void loop() {
 
     // Set current Above Ground Level to current sensor reading
     lastAGL = currentAGL;
-    smoothAGL.update((int)(getAGLAlt()*100));
-    currentAGL = (smoothAGL.getValue())*0.01;
+    smoothAGL.update((int)(getAGLAlt()));
+    currentAGL = (smoothAGL.getValue());
 
     // Get the current acceleration
     updateAccel();
@@ -113,6 +113,8 @@ void loop() {
   // write data to Log
   writeLog(String(currentTime) + F(",") + String(totalAccel) + F(",") + String(currentAGL) + F(",") + String(lastAGL) + F(",") + String(temperature) + F(",") +
     String(launchAlt) + F(",") + String(isLaunched) + F(",") + F(",") + String(apogeeDetected));
+//  Serial.println(String(currentTime) + F(",") + String(totalAccel) + F(",") + String(currentAGL) + F(",") + String(lastAGL) + F(",") + String(temperature) + F(",") +
+//                  String(launchAlt) + F(",") + String(isLaunched) + F(",") + F(",") + String(apogeeDetected));
 }
 
 // takes 100 samples and selects the lowest as ground altitude
