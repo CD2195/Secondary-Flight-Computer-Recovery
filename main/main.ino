@@ -5,32 +5,39 @@
 */
 
 #include <ResponsiveAnalogRead.h> // Import noise reduction library
+#include <avr/pgmspace.h> // Library for handling flash memory
 
 // Declare variables
-int currentAGL; //current above ground level altitude
-int lastAGL = 0; //last altitude reading (above ground level)
-int maxAGL = -30000; // maximum altitude reading (above ground level)
-int calculatedMaxAGL;
+float currentAGL; //current above ground level altitude
+float lastAGL = 0; //last altitude reading (above ground level)
+float maxAGL = -30000; // maximum altitude reading (above ground level)
+float calculatedMaxAGL;
 float temperature;
 float launchAlt = 0; //altitude at launch
 boolean isLaunched = false;
 boolean apogeeDetected = false;
-unsigned int currentTime; //current time since Arduino started
-unsigned int timeAtLaunch = 0; //time when launch was detected
-unsigned int timeAtApogee = 0; //time when apogee was detected
-float velocity = 0; // current vertical velocity with respect to the ground
+unsigned long currentTime; //current time since Arduino started
+unsigned long timeAtLaunch = 0; //time when launch was detected
+unsigned long timeAtApogee = 0; //time when apogee was detected
+
+float totalVelocity;
+float verticalVelocity;
+
+float pitch, roll, heading, ax, ay, az;
+float totalAccel; // total current acceleration
 
 
 ResponsiveAnalogRead smoothAGL(0, false); // This will remove noise from the altitude
+ResponsiveAnalogRead smoothAccel(0,false);
 
 
 // Constants
-const int LAUNCH_MARGIN = 2; // 2m needs to change in the positive direction before a launch to be detected
-const int APOGEE_MARGIN = 3; // 3m needs to change from the max alt for apogee detection.
-const int ERROR_MARGIN = 1; // 1m needs to change before it's detected
+const PROGMEM uint8_t LAUNCH_MARGIN = 2; // 2m needs to change in the positive direction before a launch to be detected
+const PROGMEM uint8_t APOGEE_MARGIN = 3; // 3m needs to change from the max alt for apogee detection.
+const PROGMEM uint8_t ERROR_MARGIN = 1; // 1m needs to change before it's detected
 
-const int MASS = 1; // mass of the rocket in kg
-const int AREA = 1; // cross-sectional area of the rocket in m^2
+const PROGMEM uint16_t MASS = 1; // mass of the rocket in kg
+const PROGMEM uint16_t AREA = 1; // cross-sectional area of the rocket in m^2
 
 
 void setup() {
@@ -47,12 +54,11 @@ void setup() {
   // Set launch altitude to ground altitude upon start
   launchAlt = getGroundAlt();
 
-  // Check Memory. If memory is less than 700, the log may fail.
-  //The SD class requires a buffer of 500 bytes, plus another 200 for the stack
-  //freeMem();
+  // Get current acceleration
+  updateAccel();
 
   // Create log header
-  writeLog(F("time,currentAGL,lastAGL,temperature,launchAlt,isLaunched,timeAtLaunch"));
+  writeLog(F("time,totalAccel,currentAGL,lastAGL,temperature,launchAlt,isLaunched,apogeeDetected"));
 
 }
 
@@ -65,8 +71,14 @@ void loop() {
 
     // Set current Above Ground Level to current sensor reading
     lastAGL = currentAGL;
-    smoothAGL.update((int)getAGLAlt());
-    currentAGL = smoothAGL.getValue();
+    smoothAGL.update((int)(getAGLAlt()*100));
+    currentAGL = (smoothAGL.getValue())*0.01;
+
+    // Get the current acceleration
+    updateAccel();
+    smoothAccel.update((int)(getTotalAccel()*100));
+    totalAccel = (smoothAccel.getValue())*0.01;
+    
 
     // Check for a launch: If the currentAGL is 2m greater than the launch margin, then the rocket has launched.
     if (currentAGL >= LAUNCH_MARGIN && !isLaunched) {
@@ -76,14 +88,6 @@ void loop() {
 
     // If the rocket has launched, do the following:
     if (isLaunched) {
-
-      // Get the current velocity (will become negative if apogee is detected)
-      if (apogeeDetected) {
-        velocity = -1 * getVelocity();
-      }
-      else {
-        velocity = getVelocity();
-      }
 
       // Set max altitude to current altitude if current altitude is higher than the maximum alt reading
       if (currentAGL >= (maxAGL + ERROR_MARGIN)) {
@@ -102,14 +106,14 @@ void loop() {
         // calculation goes here
         calculatedMaxAGL = 10000;
       }
-
-      
+    }
+    else {
+      timeAtLaunch = currentTime;
     }
   }
   // write data to Log
-  writeLog(String(currentTime) + F(",") + String(currentAGL) + F(",") + String(lastAGL) + F(",") + String(temperature) + F(",") +
-           String(launchAlt) + F(",") + String(isLaunched) + F(",") + String(timeAtLaunch) + F(",") + String(maxAGL) + F(",") + String(apogeeDetected));
-
+  writeLog(String(currentTime) + F(",") + String(totalAccel) + F(",") + String(currentAGL) + F(",") + String(lastAGL) + F(",") + String(temperature) + F(",") +
+    String(launchAlt) + F(",") + String(isLaunched) + F(",") + F(",") + String(apogeeDetected));
 }
 
 // takes 100 samples and selects the lowest as ground altitude
@@ -117,7 +121,8 @@ float getGroundAlt() {
   float lowestAlt = 30000;
   float sampleAlt = 0;
   for (int i = 0; i < 100; i++) {
-    sampleAlt = get_alt();
+    if(altitude_temperature_sensor(sampleAlt,temperature));
+    else sampleAlt = 0;
     if (sampleAlt < lowestAlt)
       lowestAlt = sampleAlt;
   }
@@ -126,18 +131,54 @@ float getGroundAlt() {
 
 // Get the altitude above ground level
 float getAGLAlt() {
-  return  get_alt() - launchAlt;
+  float altitude;
+  if(altitude_temperature_sensor(altitude,temperature)) {
+    return altitude - launchAlt;
+  }
+  return 0;
 }
 
-// get the current velocity
-float getVelocity() {
-  return (currentAGL / (currentTime - timeAtLaunch));
+// get the velocity.  0 = total; 1 = x; 2 = y; 3 = z;
+float getVelocity(float v0, byte direction) {
+  float accel;
+  switch (direction) {
+    case 0: accel = getTotalAccel();
+    case 1: accel = ax;
+    case 2: accel = ay;
+    case 3: accel = az;
+  }
+  return (v0 + ((0.5)*(accel)*(pow(((currentTime- timeAtLaunch)*0.001),2))));
 }
 
+// Update acceleration from sensors
+void updateAccel() {
+  if(accelerometer_sensor(pitch,roll,heading,ax,ay,az));
+  else Serial.println("Accelerometer update failed!");
+}
 
-//uint16_t freeMem() {
-//  char top;
-//  extern char *__brkval;
-//  extern char __bss_end;
-//  Serial.println( __brkval ? &top - __brkval : &top - &__bss_end);
+// get the current total acceleration
+float getTotalAccel() {
+  return sqrt((pow(ax,2)+pow(ay,2)+pow(az,2)));
+}
+
+//void get_accel() {
+//  float pitch, roll, heading, ax, ay, az, atotal;
+//  if(accelerometer_sensor(pitch,roll,heading,ax,ay,az)) {
+//  Serial.print(F("pitch: "));
+//  Serial.print(pitch);
+//  Serial.print(F(";  roll: "));
+//  Serial.print(roll);
+//  Serial.print(F(";  heading: "));
+//  Serial.print(heading);
+//  Serial.print(F(";  ax: "));
+//  Serial.print(ax);
+//  Serial.print(F(";  ay: "));
+//  Serial.print(ay);
+//  Serial.print(F(";  az: "));
+//  Serial.print(az);
+//  atotal = sqrt((pow(ax,2)+pow(ay,2)+pow(az,2)));
+//  Serial.print(F(";  total: "));
+//  Serial.println(atotal);
+//  }
 //}
+

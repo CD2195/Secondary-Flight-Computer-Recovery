@@ -36,7 +36,7 @@ void initSensors() {
   }
 }
 
-boolean accelerometer_sensor(float &pitch, float &roll, float &heading) {
+boolean accelerometer_sensor(float &pitch, float &roll, float &heading, float &ax, float &ay, float &az) {
   sensors_event_t accel_event;
   sensors_vec_t   orientation;
  
@@ -54,12 +54,16 @@ boolean accelerometer_sensor(float &pitch, float &roll, float &heading) {
     roll = orientation.roll;
     pitch = orientation.pitch;
     heading = orientation.heading;
+    ax = accel_event.acceleration.x;
+    ay = accel_event.acceleration.y;
+    az = accel_event.acceleration.z;
     return true;
   }
-
   return false;
-}
+}  
 
+
+// Function returns float value for altitude based on sea level pressure, temperature and current pressure. 
 boolean altitude_temperature_sensor(float &altitude, float &temperature) {
   sensors_event_t bmp_event;
 
@@ -77,24 +81,4 @@ boolean altitude_temperature_sensor(float &altitude, float &temperature) {
   }
 
   return false;
-}
-
-
-// Function returns float value for altitude based on sea level pressure, temperature and current pressure. 
-float get_alt() {
-   sensors_event_t bmp_event;
-   bmp.getEvent(&bmp_event);
-  if (bmp_event.pressure)
-  {
-    /* Get ambient temperature in C */
-    bmp.getTemperature(&temperature);
-    /* Convert atmospheric pressure, SLP and temp to altitude    */
-    float altitude = bmp.pressureToAltitude(seaLevelPressure,
-                                      bmp_event.pressure,
-                                      temperature); 
-    return altitude;
-  }
-  else { 
-    return 0;
-  }
 }

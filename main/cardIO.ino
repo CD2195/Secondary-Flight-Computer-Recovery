@@ -24,7 +24,7 @@
   int d0 = 12; //MISO
   int d1 = 11; //MOSI
   int cd = 9; */
-const int cs = 8; //*/
+const PROGMEM uint8_t cs = 8; //*/
 String logFileName;
 
 
@@ -61,9 +61,12 @@ void initCard() {
     Serial.println("Error opening test.log");
   }//*/
 
+  // Check memory buffer space
+  freeMem();
+
   // Count number of files
   int count = 0;
-  File root = SD.open("/");
+  File root = SD.open(F("/"));
   while (true) {
     File index = root.openNextFile();
     count++;
@@ -73,7 +76,8 @@ void initCard() {
     index.close();
   }
   logFileName = "f" + String(count) + ".csv";
-  Serial.println("\nLatest logfile: " + logFileName);
+  Serial.print(F("\nLatest logfile: "));
+  Serial.println(logFileName);
 }
   
 // Writes strings to latest log file (f#.log). Parameter is a string.
@@ -89,5 +93,12 @@ void writeLog(String text) {
   }
 }
 
-
-
+// Function determines how much free memory there is after compiling. If below 500 bytes, logging may fail. 
+uint16_t freeMem() {
+  char top;
+  extern char *__brkval;
+  extern char __bss_end;
+  Serial.print(F("Free memory: "));
+  Serial.print( __brkval ? &top - __brkval : &top - &__bss_end);
+  Serial.println(F(" bytes"));
+}
