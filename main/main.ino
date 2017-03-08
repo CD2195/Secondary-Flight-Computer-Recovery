@@ -19,8 +19,8 @@ unsigned long currentTime; //current time since Arduino started
 unsigned long timeAtLaunch = 0; //time when launch was detected
 unsigned long timeAtApogee = 0; //time when apogee was detected
 
-float totalVelocity;
-float verticalVelocity;
+float totalVel = 0;
+float verticalVel = 0;
 
 float pitch, roll, heading, ax, ay, az;
 float totalAccel; // total current acceleration
@@ -57,7 +57,7 @@ void setup() {
   updateAccel();
 
   // Create log header
-  writeLog(F("time,totalAccel,currentAGL,lastAGL,temperature,launchAlt,isLaunched,apogeeDetected"));
+  writeLog(F("time,totalAccel,currentAGL,totalVel,verticalVel,lastAGL,temperature,launchAlt,isLaunched,apogeeDetected"));
 
 }
 
@@ -77,7 +77,10 @@ void loop() {
     updateAccel();
     smoothAccel.update((int)(getTotalAccel()*100));
     totalAccel = (smoothAccel.getValue())*0.01;
-    
+
+    // Get velocities
+    totalVel = getVelocity(0,0);
+    verticalVel = getVelocity(0,3);
 
     // Check for a launch: If the currentAGL is 2m greater than the launch margin, then the rocket has launched.
     if (currentAGL >= LAUNCH_MARGIN && !isLaunched) {
@@ -111,10 +114,9 @@ void loop() {
     }
   }
   // write data to Log
-  writeLog(String(currentTime) + F(",") + String(totalAccel) + F(",") + String(currentAGL) + F(",") + String(lastAGL) + F(",") + String(temperature) + F(",") +
-    String(launchAlt) + F(",") + String(isLaunched) + F(",") + F(",") + String(apogeeDetected));
-//  Serial.println(String(currentTime) + F(",") + String(totalAccel) + F(",") + String(currentAGL) + F(",") + String(lastAGL) + F(",") + String(temperature) + F(",") +
-//                  String(launchAlt) + F(",") + String(isLaunched) + F(",") + F(",") + String(apogeeDetected));
+  writeLog(String(currentTime) + F(",") + String(totalAccel) + F(",") + String(totalVel) + F(",") + String(verticalVel) + 
+            F(",") + String(currentAGL) + F(",") + String(lastAGL) + F(",") + String(temperature) + F(",") + String(launchAlt) + 
+              F(",") + String(isLaunched) + F(",") + String(apogeeDetected));
 }
 
 // takes 100 samples and selects the lowest as ground altitude
@@ -143,7 +145,7 @@ float getAGLAlt() {
 float getVelocity(float v0, byte direction) {
   float accel;
   switch (direction) {
-    case 0: accel = getTotalAccel();
+    case 0: accel = totalAccel;
     case 1: accel = ax;
     case 2: accel = ay;
     case 3: accel = az;
@@ -155,7 +157,7 @@ float getVelocity(float v0, byte direction) {
 void updateAccel() {
   if(accelerometer_sensor(pitch,roll,heading,ax,ay,az));
   else Serial.println("Accelerometer update failed!");
-}
+}F("time,totalAccel,currentAGL,lastAGL,temperature,launchAlt,isLaunched,apogeeDetected")
 
 // get the current total acceleration
 float getTotalAccel() {

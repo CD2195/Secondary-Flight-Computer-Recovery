@@ -18,7 +18,7 @@
 
 
 // Sparkfun MicroSD breakout Hookup:
-// VCC = 5V
+// VCC = 5V (ZERO uses 3.3V)
 // GND = GND
 /*int int sck = 13; //SCLK, CLK
   int d0 = 12; //MISO
@@ -31,13 +31,13 @@ String logFileName;
 // Function to initialise card. Must be called in setup()
 void initCard() {
   Serial.print (F("Initialising SD Card... "));
-  if (!SD.begin(cs)) {
+  if (!SD.begin(8)) {
     Serial.println(F("Initialisation failed!"));
     return;
   }
   Serial.println(F("Initialisation done."));
 
-  /*// test file write
+  /* // test file write
   File test = SD.open("test.log", FILE_WRITE);
   if (test) { // if the file opens
     Serial.println("Writing to test.log...");
@@ -62,7 +62,7 @@ void initCard() {
   }//*/
 
   // Check memory buffer space
-  freeMem();
+  //freeMem();
 
   // Count number of files
   int count = 0;
@@ -94,11 +94,11 @@ void writeLog(String text) {
 }
 
 // Function determines how much free memory there is after compiling. If below 500 bytes, logging may fail. 
-uint16_t freeMem() {
-  char top;
-  extern char *__brkval;
-  extern char __bss_end;
-  Serial.print(F("Free memory: "));
-  Serial.print( __brkval ? &top - __brkval : &top - &__bss_end);
-  Serial.println(F(" bytes"));
-}
+//uint16_t freeMem() {
+//  char top;
+//  extern char *__brkval;
+//  extern char __bss_end;
+//  Serial.print(F("Free memory: "));
+//  Serial.print( __brkval ? &top - __brkval : &top - &__bss_end);
+//  Serial.println(F(" bytes"));
+//}
