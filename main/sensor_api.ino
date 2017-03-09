@@ -13,7 +13,7 @@ Adafruit_BMP085_Unified       bmp   = Adafruit_BMP085_Unified(18001);
 
 /* Update this with the correct SLP for accurate altitude measurements */
 //float seaLevelPressure = SENSORS_PRESSURE_SEALEVELHPA;
-float seaLevelPressure = 999.25;
+float seaLevelPressure = 1010;
 
 void initSensors() {
   if(!accel.begin())

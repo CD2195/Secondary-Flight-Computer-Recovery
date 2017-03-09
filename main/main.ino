@@ -57,7 +57,7 @@ void setup() {
   updateAccel();
 
   // Create log header
-  writeLog(F("time,totalAccel,currentAGL,totalVel,verticalVel,lastAGL,temperature,launchAlt,isLaunched,apogeeDetected"));
+  writeLog(F("time,totalAccel,totalVel,verticalVel,currentAGL,lastAGL,temperature,launchAlt,isLaunched,apogeeDetected"));
 
 }
 
